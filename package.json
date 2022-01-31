@@ -1,0 +1,27 @@
+{
+  "name": "new-release-playlist",
+  "version": "1.0.0",
+  "description": "Grab new Blu-ray releases and add their trailers to a YouTube playlist",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "npm run build && node -r source-map-support/register .",
+    "build": "tsc",
+    "dev": "tsc-watch --onSuccess 'node -r source-map-support/register .'",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "SystemDisc",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@types/jsdom": "^16.2.14",
+    "@types/node": "^16.11.21",
+    "tsc-watch": "^4.6.0",
+    "typescript": "^4.5.5"
+  },
+  "dependencies": {
+    "axios": "^0.25.0",
+    "google-auth-library": "^7.11.0",
+    "googleapis": "^92.0.0",
+    "jsdom": "^19.0.0",
+    "source-map-support": "^0.5.21"
+  }
+}
