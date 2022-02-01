@@ -4,7 +4,7 @@ util.inspect.defaultOptions.depth = null;
 import { promises as fs } from 'fs';
 import { JSDOM } from 'jsdom';
 import axios from 'axios';
-import { google } from 'googleapis';
+import { google, youtube_v3 } from 'googleapis';
 
 import * as C from './constants';
 import { authorize } from './youtube';
@@ -38,13 +38,19 @@ const jsdom = new JSDOM();
     throw new Error('You need a playlist called "Blu-ray Trailers"');
   }
 
-  let { data: { items: playlistItems } } = await yt.playlistItems.list({
-    auth,
-    part: ['id', 'contentDetails', 'snippet'],
-    playlistId: playlist.id!,
-  });
-
-  if (!playlistItems) playlistItems = [];
+  let playlistItems: youtube_v3.Schema$PlaylistItem[] = [];
+  let data: youtube_v3.Schema$PlaylistItemListResponse;
+  let pageToken: string | undefined;
+  do {
+    ({ data } = await yt.playlistItems.list({
+      auth,
+      part: ['id', 'contentDetails', 'snippet'],
+      playlistId: playlist.id!,
+      maxResults: 50,
+      pageToken,
+    }));
+    playlistItems.push(...(data.items || []));
+  } while (pageToken = (data.nextPageToken || undefined));
 
   const { data: startHtml } = await axios.get(C.START_URL);
   const domParser = new jsdom.window.DOMParser();
@@ -54,7 +60,7 @@ const jsdom = new JSDOM();
     const movieName = (trailerLink.closest('.movie_info')?.querySelector('.index_link a')?.textContent || 'Unknown').trim();
     if (processedMovies.has(movieName)) continue;
     await fs.writeFile(C.PROCESSED_MOVIES_FILE, `${movieName}\n`, { flag: 'a+' });
-    console.log(`\n\n\n\n${movieName}`);
+    console.log(`\n${movieName}`);
     const absUrl = new URL(trailerLink.href, C.START_URL);
     const { data: trailerPageHtml } = await axios.get(absUrl.href);
     const doc = domParser.parseFromString(trailerPageHtml, 'text/html');
@@ -88,7 +94,7 @@ const jsdom = new JSDOM();
             });
             // console.log('data', JSON.stringify(data, null, 2));
           } catch (e) {
-            console.error(e);
+            console.error((e as any)?.message || e);
           }
         } else {
           console.log('hmmmm', absUrl);
